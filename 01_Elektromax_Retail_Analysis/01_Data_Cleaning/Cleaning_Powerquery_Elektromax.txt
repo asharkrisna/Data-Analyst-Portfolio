@@ -1,0 +1,84 @@
+-- DIM_TOKO, DIM_KARYAWAN, DIM_WAKTU & DIM_PROMOSI (prosesnya kurang lebih sama)
+
+let
+    DIM_TOKO_Sheet = Source{[Item="DIM_TOKO",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(DIM_TOKO_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"toko_id", Int64.Type}, {"kode_toko", type text}, {"nama_toko", type text}, {"tipe_toko", type text}, {"format", type text}, {"kota", type text}, {"provinsi", type text}, {"wilayah", type text}, {"region", type text}, {"luas_m2", Int64.Type}, {"tgl_buka", type datetime}, {"status_toko", type text}, {"target_bulanan", Int64.Type}}),
+    #"Removed Blank Rows" = Table.SelectRows(#"Changed Type", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+    #"Changed Type with Locale" = Table.TransformColumnTypes(#"Removed Blank Rows", {{"tgl_buka", type date}}, "id-ID")
+in
+    #"Changed Type with Locale"
+
+
+-- DIM_PRODUK
+
+let
+    DIM_PRODUK_Sheet = Source{[Item="DIM_PRODUK",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(DIM_PRODUK_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"produk_id", Int64.Type}, {"kode_produk", type text}, {"nama_produk", type text}, {"kategori", type text}, {"subkategori", type text}, {"merek", type text}, {"tipe", type text}, {"ukuran", type text}, {"watt", Int64.Type}, {"warna", type text}, {"garansi_tahun", Int64.Type}, {"harga_normal", type any}, {"harga_pokok", type any}, {"status_aktif", Int64.Type}}),
+    #"Removed Blank Rows" = Table.SelectRows(#"Changed Type", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+    #"Removed Duplicates" = Table.Distinct(#"Removed Blank Rows", {"produk_id"}),
+    #"Added Conditional Column" = Table.AddColumn(#"Removed Duplicates", "subkategori_clean", each if [subkategori] <> null then [subkategori] else if Text.Contains([nama_produk], "Microwave") then "Microwave" else if Text.Contains([nama_produk], "TV") then "Televisi" else "Tidak Diketahui"),
+    #"Removed Columns" = Table.RemoveColumns(#"Added Conditional Column",{"subkategori"}),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"subkategori_clean", "subkategori"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns",{{"subkategori", type text}}),
+    #"Capitalized Each Word" = Table.TransformColumns(#"Changed Type1",{{"merek", Text.Proper, type text}}),
+    #"Trimmed Text" = Table.TransformColumns(#"Capitalized Each Word",{{"merek", Text.Trim, type text}}),
+    #"Replaced Value" = Table.ReplaceValue(#"Trimmed Text","Lg","LG",Replacer.ReplaceText,{"merek"}),
+    #"Replaced Value1" = Table.ReplaceValue(#"Replaced Value","Tcl","TCL",Replacer.ReplaceText,{"merek"}),
+    #"Changed Type2" = Table.TransformColumnTypes(#"Replaced Value1",{{"harga_normal", type text}}),
+    #"Replaced Value2" = Table.ReplaceValue(#"Changed Type2","Rp ","",Replacer.ReplaceText,{"harga_normal"}),
+    #"Replaced Value3" = Table.ReplaceValue(#"Replaced Value2",".","",Replacer.ReplaceText,{"harga_normal"}),
+    #"Changed Type3" = Table.TransformColumnTypes(#"Replaced Value3",{{"harga_normal", Int64.Type}, {"harga_pokok", type text}}),
+    #"Replaced Value4" = Table.ReplaceValue(#"Changed Type3","Rp ","",Replacer.ReplaceText,{"harga_pokok"}),
+    #"Replaced Value5" = Table.ReplaceValue(#"Replaced Value4",".","",Replacer.ReplaceText,{"harga_pokok"}),
+    #"Changed Type4" = Table.TransformColumnTypes(#"Replaced Value5",{{"harga_pokok", Int64.Type}})
+in
+    #"Changed Type4"
+
+
+-- DIM_PElANGGAN
+
+let
+    DIM_PELANGGAN_Sheet = Source{[Item="DIM_PELANGGAN",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(DIM_PELANGGAN_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"pelanggan_id", Int64.Type}, {"kode_pelanggan", type text}, {"nama_pelanggan", type text}, {"jenis_kelamin", type text}, {"tgl_lahir", type any}, {"kelompok_umur", type text}, {"kota", type text}, {"provinsi", type text}, {"segmen", type text}, {"tgl_daftar", type datetime}, {"email", type text}, {"no_hp", type text}, {"is_member", Int64.Type}}),
+    #"Removed Blank Rows" = Table.SelectRows(#"Changed Type", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+    #"Changed Type with Locale" = Table.TransformColumnTypes(#"Removed Blank Rows", {{"tgl_lahir", type date}}, "id-ID"),
+    #"Capitalized Each Word" = Table.TransformColumns(#"Changed Type with Locale",{{"kota", Text.Proper, type text}}),
+    #"Trimmed Text" = Table.TransformColumns(#"Capitalized Each Word",{{"kota", Text.Trim, type text}}),
+    #"Capitalized Each Word1" = Table.TransformColumns(#"Trimmed Text",{{"segmen", Text.Proper, type text}}),
+    #"Trimmed Text1" = Table.TransformColumns(#"Capitalized Each Word1",{{"segmen", Text.Trim, type text}}),
+    #"Changed Type with Locale1" = Table.TransformColumnTypes(#"Trimmed Text1", {{"tgl_daftar", type date}}, "id-ID"),
+    #"Replaced Value" = Table.ReplaceValue(#"Changed Type with Locale1",null,"Tidak Tersedia",Replacer.ReplaceValue,{"email"})
+in
+    #"Replaced Value"
+
+
+-- FACT_PENJUALAN
+
+let
+    FACT_PENJUALAN_Sheet = Source{[Item="FACT_PENJUALAN",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(FACT_PENJUALAN_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"penjualan_id", Int64.Type}, {"produk_id", Int64.Type}, {"waktu_id", Int64.Type}, {"pelanggan_id", Int64.Type}, {"toko_id", Int64.Type}, {"karyawan_id", Int64.Type}, {"promosi_id", Int64.Type}, {"kuantitas", Int64.Type}, {"harga_satuan", type text}, {"total_harga", Int64.Type}, {"diskon_persen", Int64.Type}, {"diskon_nominal", Int64.Type}, {"total_neto", Int64.Type}, {"hpp", Int64.Type}, {"gross_profit", Int64.Type}, {"metode_bayar", type text}, {"status_transaksi", type text}}),
+    #"Replaced Value" = Table.ReplaceValue(#"Changed Type","Rp ","",Replacer.ReplaceText,{"harga_satuan"}),
+    #"Replaced Value1" = Table.ReplaceValue(#"Replaced Value",".","",Replacer.ReplaceText,{"harga_satuan"}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Replaced Value1",{{"harga_satuan", Int64.Type}, {"diskon_persen", type text}}),
+    #"Replaced Value2" = Table.ReplaceValue(#"Changed Type1",null,"0",Replacer.ReplaceValue,{"diskon_persen"}),
+    #"Changed Type2" = Table.TransformColumnTypes(#"Replaced Value2",{{"diskon_persen", type number}}),
+    #"Capitalized Each Word" = Table.TransformColumns(#"Changed Type2",{{"metode_bayar", Text.Proper, type text}}),
+    #"Trimmed Text" = Table.TransformColumns(#"Capitalized Each Word",{{"metode_bayar", Text.Trim, type text}}),
+    #"Added Conditional Column" = Table.AddColumn(#"Trimmed Text", "metode_bayar_clean", each if Text.Contains([metode_bayar], "Cash") then "Tunai" else if Text.Contains([metode_bayar], "Tf Bank") then "Transfer Bank" else if Text.Contains([metode_bayar], "Transfer") then "Transfer Bank" else if Text.Contains([metode_bayar], "Cc") then "Kartu Kredit" else if Text.Contains([metode_bayar], "K. Kredit") then "Kartu Kredit" else if Text.Contains([metode_bayar], "Credit Card") then "Kartu Kredit" else if Text.Contains([metode_bayar], "Q-Ris ") then "QRIS" else if Text.Contains([metode_bayar], "Qris") then "QRIS" else if Text.Contains([metode_bayar], "Cicilan") then "Cicilan 0%" else if Text.Contains([metode_bayar], "Cicilan 0 persen") then "Cicilan 0%" else [metode_bayar]),
+    #"Changed Type3" = Table.TransformColumnTypes(#"Added Conditional Column",{{"metode_bayar_clean", type text}}),
+    #"Replaced Value3" = Table.ReplaceValue(#"Changed Type3","Q-Ris","QRIS",Replacer.ReplaceText,{"metode_bayar_clean"}),
+    #"Removed Columns" = Table.RemoveColumns(#"Replaced Value3",{"metode_bayar"}),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Columns",{{"metode_bayar_clean", "metode_bayar"}}),
+    #"Capitalized Each Word1" = Table.TransformColumns(#"Renamed Columns",{{"status_transaksi", Text.Proper, type text}}),
+    #"Trimmed Text1" = Table.TransformColumns(#"Capitalized Each Word1",{{"status_transaksi", Text.Trim, type text}}),
+    #"Added Conditional Column1" = Table.AddColumn(#"Trimmed Text1", "status_transaksi_clean", each if Text.Contains([status_transaksi], "Done") then "Selesai" else if Text.Contains([status_transaksi], "Complete") then "Selesai" else if Text.Contains([status_transaksi], "Return") then "Retur" else if Text.Contains([status_transaksi], "Dikembalikan") then "Retur" else if Text.Contains([status_transaksi], "Sukses") then "Selesai" else [status_transaksi]),
+    #"Removed Columns1" = Table.RemoveColumns(#"Added Conditional Column1",{"status_transaksi"}),
+    #"Renamed Columns1" = Table.RenameColumns(#"Removed Columns1",{{"status_transaksi_clean", "status_transaksi"}}),
+    #"Changed Type4" = Table.TransformColumnTypes(#"Renamed Columns1",{{"status_transaksi", type text}}),
+    #"Removed Duplicates" = Table.Distinct(#"Changed Type4", {"penjualan_id"})
+in
+    #"Removed Duplicates"

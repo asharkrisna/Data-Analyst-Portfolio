@@ -1,0 +1,54 @@
+-- TABEL PRODUK 
+
+let
+    Produk_Sheet = Source{[Item="Produk",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Produk_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"produk_id", Int64.Type}, {"nama_produk", type text}, {"kategori", type text}, {"subkategori", type text}, {"harga_jual", Int64.Type}, {"hpp", Int64.Type}, {"tanggal_rilis", type date}}),
+    #"Changed Type with Locale" = Table.TransformColumnTypes(#"Changed Type", {{"tanggal_rilis", type date}}, "id-ID")
+in
+    #"Changed Type with Locale"
+
+
+-- TABEL CABANG 
+
+let
+    Cabang_Sheet = Source{[Item="Cabang",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Cabang_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"kode_cabang", type text}, {"nama_cabang", type text}, {"kota", type text}, {"provinsi", type text}, {"tipe_lokasi", type text}, {"tanggal_buka", type date}, {"kapasitas_kursi", Int64.Type}}),
+    #"Changed Type with Locale" = Table.TransformColumnTypes(#"Changed Type", {{"tanggal_buka", type date}}, "id-ID")
+in
+    #"Changed Type with Locale"
+
+
+-- TABEL PENJUALAN
+
+let
+    Penjualan_Sheet = Source{[Item="Penjualan",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Penjualan_Sheet,3),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Removed Blank Rows" = Table.SelectRows(#"Promoted Headers", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+    #"Filtered Rows" = Table.SelectRows(#"Removed Blank Rows", each [no_transaksi] <> "TOTAL"),
+    #"Changed Type with Locale" = Table.TransformColumnTypes(#"Filtered Rows", {{"tanggal", type date}}, "id-ID"),
+    #"Changed Type" = Table.TransformColumnTypes(#"Changed Type with Locale",{{"no_transaksi", type text}, {"jam", type time}, {"kode_cabang", type text}}),
+    #"Trimmed Text" = Table.TransformColumns(#"Changed Type",{{"kode_cabang", Text.Trim, type text}}),
+    #"Uppercased Text" = Table.TransformColumns(#"Trimmed Text",{{"kode_cabang", Text.Upper, type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Uppercased Text",{{"produk_id", Int64.Type}, {"qty", Int64.Type}, {"harga_satuan", Int64.Type}}),
+    #"Replaced Value" = Table.ReplaceValue(#"Changed Type1",null,0,Replacer.ReplaceValue,{"diskon"}),
+    #"Replaced Value1" = Table.ReplaceValue(#"Replaced Value","Debit","Kartu Debit",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Replaced Value2" = Table.ReplaceValue(#"Replaced Value1","kartu debit","Kartu Debit",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Replaced Value3" = Table.ReplaceValue(#"Replaced Value2","e-wallet","E-Wallet",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Replaced Value4" = Table.ReplaceValue(#"Replaced Value3","EWallet","E-Wallet",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Changed Type2" = Table.TransformColumnTypes(#"Replaced Value4",{{"metode_bayar", type text}}),
+    #"Replaced Value5" = Table.ReplaceValue(#"Changed Type2","E-wallet","E-Wallet",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Replaced Value6" = Table.ReplaceValue(#"Replaced Value5","qris","QRIS",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Replaced Value7" = Table.ReplaceValue(#"Replaced Value6","Qris","QRIS",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Replaced Value8" = Table.ReplaceValue(#"Replaced Value7","tunai","Tunai",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Replaced Value9" = Table.ReplaceValue(#"Replaced Value8","TUNAI","Tunai",Replacer.ReplaceValue,{"metode_bayar"}),
+    #"Changed Type3" = Table.TransformColumnTypes(#"Replaced Value9",{{"diskon", Int64.Type}, {"tipe_order", type text}}),
+    #"Removed Duplicates" = Table.Distinct(#"Changed Type3"),
+    #"Added Custom" = Table.AddColumn(#"Removed Duplicates", "penjualan_bersih", each [qty]*[harga_satuan]-[diskon]),
+    #"Changed Type4" = Table.TransformColumnTypes(#"Added Custom",{{"penjualan_bersih", Int64.Type}}),
+    #"Inserted Hour" = Table.AddColumn(#"Changed Type4", "Hour", each Time.Hour([jam]), Int64.Type),
+    #"Changed Type5" = Table.TransformColumnTypes(#"Inserted Hour",{{"Hour", Int64.Type}})
+in
+    #"Changed Type5"
