@@ -1,3 +1,4 @@
+
 # ElektroMax Retail Analysis
 
 **Dari data mentah ke keputusan bisnis: analisis 3 tahun penjualan retail elektronik dengan Power Query, Power BI, dan PostgreSQL.**
@@ -12,7 +13,7 @@ ElektroMax adalah jaringan retail elektronik rumah tangga dengan **10 cabang** d
 
 **Pertanyaan utama:** omzet 2025 turun 2,92% dibanding 2024. Apa penyebabnya, bagian bisnis mana yang paling terdampak, dan keputusan apa yang perlu diambil?
 
-## Pitch Deck
+## Deck
 
 Ringkasan lengkap proyek (16 slide, termasuk insight dan rekomendasi) bisa dibaca di sini:
 
@@ -96,3 +97,6 @@ Sumber Dataset : [@alvinowrp](https://youtu.be/kOg4RCq8aW4?si=z3BF-fN8z5aeFgER)
 ## Kontak
 
 **Ashar Krisna Prasetya** | [LinkedIn](https://www.linkedin.com/in/ashar-krisna-51257b252/) | [Email](mailto:asharkrisna2603@gmail.com) | [Portofolio lain](../README.md)
+=======
+
+

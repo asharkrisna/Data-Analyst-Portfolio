@@ -14,6 +14,14 @@
 | 🧹 **Dokumentasi cleaning** | [01_Cleaning_Kopi_Rindang.pdf](./01_Cleaning_Data/01_Cleaning_Kopi_Rindang.pdf) |
 | 🗃️ **Dataset** | [Google Sheets](https://docs.google.com/spreadsheets/d/1xLbSJd9RAthprxuNRJS9Kr9Xdw9DcMnW/edit?usp=sharing) |
 
+## Deck
+
+Ringkasan lengkap proyek (16 slide, termasuk insight dan rekomendasi) bisa dibaca di sini:
+
+| Format | Link |
+|---|---|
+| Baca langsung | [Ringkasan lengkap (PDF)](https://drive.google.com/file/d/1tSLhh8GhcVJKcmJZkhSU0pr_zs3y_JG7/view?usp=sharing) |
+
 ## Latar Belakang
 
 Kopi Rindang punya 8 cabang di Bandung, Jakarta, Bekasi, Yogyakarta, dan Surabaya, dengan 4 tipe lokasi (Kampus, Residensial, Perkantoran, Mall) dan 22 menu dalam 3 kategori. Data penjualan masih berupa export mentah dari sistem kasir, sehingga manajemen belum punya gambaran terpadu tentang tren, cabang, produk, dan jam ramai.
